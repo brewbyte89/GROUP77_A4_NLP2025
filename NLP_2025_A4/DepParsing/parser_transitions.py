@@ -5,6 +5,11 @@ NLP A4 2023
 parser_transitions.py: Algorithms for completing partial parsess.
 Authors: Sahil Chopra, Haoshen Hong, Nathan Schneider, Lucia Donatelli
 """
+"""
+4a and b : 14 steps, 7 words >> 2.0 steps/word each word has to be at both ends of the arc
+4c : .conll, tab separated, 1 word per line, with blank line separtion for each sentence, each line already labelled with syntactic head (col7), and syntactic dependencies (col8) enable dependency parsing.
+note that no lemmas(col3), morphological features(col6, enhanced dep and misc annotation (col9 and 10). AS UAS, we will leave out col8 and focussing on col1 and col7 to predict the relation label. 
+"""
 
 import sys
 
@@ -17,6 +22,9 @@ class PartialParse(object):
         """
         # The sentence being parsed is kept for bookkeeping purposes. Do NOT alter it in your code.
         self.sentence = sentence
+        self.stack = ["ROOT"]
+        self.buffer = list(sentence)
+        self.dependencies = []
 
         ### YOUR CODE HERE (3 Lines)
         ### Your code should initialize the following fields:
@@ -51,8 +59,22 @@ class PartialParse(object):
         ###         2. Left Arc
         ###         3. Right Arc
 
-
         ### END YOUR CODE
+        if transition == "S":
+            # Shift
+            self.stack.append(self.buffer.pop(0))
+        elif transition == "LA":
+            # Left Arc 
+            # Create a dependency between the top two elements of the stack and remove dependent from stack
+            head, dep = self.stack[-1], self.stack[-2]
+            self.dependencies.append((head, dep))
+            self.stack.pop(-2)
+        elif transition == "RA":
+            # Right Arc
+            # Create a dependency between the top two elements of the stack and remove head from stack
+            head, dep = self.stack[-2], self.stack[-1]
+            self.dependencies.append((head, dep))
+            self.stack.pop(-1)
 
     def parse(self, transitions):
         """Applies the provided transitions to this PartialParse
