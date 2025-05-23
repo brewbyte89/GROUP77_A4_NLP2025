@@ -109,6 +109,27 @@ def minibatch_parse(sentences, model, batch_size):
                                                     contain the parse for sentences[i]).
     """
     dependencies = []
+    partial_parses = [PartialParse(sentence) for sentence in sentences]
+    unfinished_parses = partial_parses[:]
+    while len(unfinished_parses) > 0:
+        # Get the next batch of partial parses
+        batch = unfinished_parses[:batch_size]
+        # Get the next transition for each parse in the batch
+        transitions = model.predict(batch)
+
+        # Apply the transitions to the partial parses
+        for i, pp in enumerate(batch):
+            pp.parse_step(transitions[i])
+
+        # Remove finished parses from the unfinished list and add their dependencies to the output
+        unfinished_parses = [pp for pp in unfinished_parses 
+                           if len(pp.buffer) > 0 or len(pp.stack) > 1]
+    
+    # Extract dependencies from all partial parses
+    dependencies = [pp.dependencies for pp in partial_parses]
+    return dependencies
+
+
 
     ### YOUR CODE HERE (~8-10 Lines)
     ### TODO:
@@ -127,7 +148,6 @@ def minibatch_parse(sentences, model, batch_size):
 
     ### END YOUR CODE
 
-    return dependencies
 
 
 def test_step(name, transition, stack, buf, deps,
